@@ -40,6 +40,16 @@ FROM debian:bookworm-slim AS final
 # libpq-dev is for development, libpq5 is for runtime, curl is for healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends curl libpq5
 
+WORKDIR /app
+# Copy migration files and Diesel config for runtime migrations
+COPY ./migrations migrations
+COPY ./src/schema.rs src/schema.rs
+COPY ./diesel.toml diesel.toml
+
+# Entrypoint to migrate every time (to update db with code changes)
+COPY ./entrypoint.sh /
+RUN chmod +x /entrypoint.sh
+
 # https://docs.docker.com/build/building/best-practices/#user
 ARG UID=10001
 RUN adduser \
@@ -52,19 +62,9 @@ RUN adduser \
     appuser
 USER appuser
 
-WORKDIR /app
-# Copy migration files and Diesel config for runtime migrations
-COPY ./migrations migrations
-COPY ./src/schema.rs src/schema.rs
-COPY ./diesel.toml diesel.toml
-
 # Copy the executable from the "build" stage.
 COPY --from=build /bin/server /bin/
 
 EXPOSE 8080
-
-# Migration
-COPY ./entrypoint.sh /
-RUN chmod +x /entrypoint.sh
 
 CMD ["/entrypoint.sh"]
