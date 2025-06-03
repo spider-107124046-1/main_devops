@@ -13,7 +13,7 @@ WORKDIR /app
 # Install required packages
 RUN apt-get update && apt-get install -y libpq-dev pkg-config build-essential
 
-RUN cargo install diesel_cli --no-default-features --features postgres
+RUN cargo install diesel_cli --locked --no-default-features --features postgres
 
 # Mount source code as read-only and build
 RUN --mount=type=bind,source=src,target=src \
