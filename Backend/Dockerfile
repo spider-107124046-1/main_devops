@@ -15,10 +15,12 @@ RUN apt-get update && apt-get install -y libpq-dev pkg-config build-essential
 
 RUN cargo install diesel_cli --no-default-features --features postgres
 
+# Rust dependency version issues
+COPY ./Cargo.toml Cargo.toml
+COPY ./Cargo.lock Cargo.lock
+
 # Mount source code as read-only and build
 RUN --mount=type=bind,source=src,target=src \
-    --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
-    --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
     --mount=type=cache,target=/app/target/ \
     --mount=type=cache,target=/usr/local/cargo/registry/ \
     --mount=type=bind,source=migrations,target=migrations \
