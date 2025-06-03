@@ -18,7 +18,7 @@ services:
     #   retries: 5
     # https://stackoverflow.com/questions/46362935/how-to-add-a-docker-health-check-to-test-a-tcp-port-is-open
     # A generic healthcheck is included here with curl
-    healthcheck: 
+    healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
       interval: 1m30s
       timeout: 30s
@@ -29,7 +29,7 @@ services:
     #   - "8080:8080"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-  
+
   db:
     image: postgres:16
     environment:
@@ -43,7 +43,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  
+
   frontend:
     build:
       context: Frontend
