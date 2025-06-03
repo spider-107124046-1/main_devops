@@ -53,3 +53,6 @@ services:
     depends_on:
       - backend
     # how to set the backend URL for axios???
+
+volumes:
+  db_data:
