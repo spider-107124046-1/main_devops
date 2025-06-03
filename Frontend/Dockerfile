@@ -9,6 +9,9 @@ ENV NODE_ENV=production
 
 WORKDIR /usr/src/app
 
+# Change ownership of node_modules to node user
+RUN chown -R node:node /usr/src/app
+
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Equivalent of npm i from instructions
 RUN --mount=type=bind,source=package.json,target=package.json \
@@ -16,10 +19,8 @@ RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev
 
- # Copy the rest of the source files into the image.
+# Copy the rest of the source files into the image.
 COPY . .
-# Change ownership of node_modules to node user
-RUN chown -R node:node /usr/src/app
 
 # Run the application as a non-root user.
 USER node
