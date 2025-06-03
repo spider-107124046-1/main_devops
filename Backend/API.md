@@ -21,7 +21,7 @@
 
 * **Error Response:**
 
- * **Code:** 500 <br />
+  * **Code:** 500 <br />
     No users found with email: rithvik.ravila@gmail.com
 
 **Show All Users**
@@ -46,7 +46,7 @@
 
 * **Error Response:**
 
- * **Code:** 500 <br />
+  * **Code:** 500 <br />
     No users found with email: rithvik.ravila@gmail.com
 
 **Create User**
@@ -93,7 +93,7 @@
 
 * **Error Response:**
 
- * **Code:** 500 <br />
+  * **Code:** 500 <br />
     No users found with email: rithvik.ravila@gmail.com
 
   * **Code:** 500 <br />

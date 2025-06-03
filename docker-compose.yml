@@ -1,0 +1,55 @@
+# Project name, this will be used to prefix all container names
+name: authentication-app # Name found in Frontend
+
+services:
+  backend:
+    build:
+      context: Backend
+      target: final
+    depends_on:
+      db:
+        condition: service_healthy
+    # Ideally the backend's healthcheck should be like this, but endpoints.rs doesnt give a status endpoint
+    # I have included a sample healthcheck below, do not uncomment it unless status endpoint is added
+    # healthcheck:
+    #   test: ["CMD-SHELL", "curl -f http://localhost:8080/status || exit 1"]
+    #   interval: 1m30s
+    #   timeout: 30s
+    #   retries: 5
+    # https://stackoverflow.com/questions/46362935/how-to-add-a-docker-health-check-to-test-a-tcp-port-is-open
+    # A generic healthcheck is included here with curl
+    healthcheck: 
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    ports:
+      # Uncomment this line to expose the backend to public
+      # - "8080:8080"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+  
+  db:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  frontend:
+    build:
+      context: Frontend
+    ports:
+      # Change the port if needed
+      - "3000:3000"
+    depends_on:
+      - backend
+    # how to set the backend URL for axios???
