@@ -25,6 +25,7 @@ RUN --mount=type=bind,source=src,target=src \
     <<EOF
 
 set -e
+cargo update -p time
 cargo build --release  
 cp ./target/release/$APP_NAME /bin/server
 EOF
