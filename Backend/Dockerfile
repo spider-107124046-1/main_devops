@@ -4,8 +4,8 @@
 ################################################################################
 # Create a stage for building the application.
 
-ARG RUST_VERSION=1.70.0
-ARG APP_NAME=react-rust-postgres
+ARG RUST_VERSION=1.87
+ARG APP_NAME=login-app-backend
 FROM rust:${RUST_VERSION}-slim AS build
 ARG APP_NAME
 WORKDIR /app
@@ -13,7 +13,7 @@ WORKDIR /app
 # Install required packages
 RUN apt-get update && apt-get install -y libpq-dev pkg-config build-essential
 
-RUN cargo install diesel_cli --locked --no-default-features --features postgres
+RUN cargo install diesel_cli --no-default-features --features postgres
 
 # Mount source code as read-only and build
 RUN --mount=type=bind,source=src,target=src \
@@ -25,7 +25,7 @@ RUN --mount=type=bind,source=src,target=src \
     <<EOF
 
 set -e
-cargo build --locked --release  
+cargo build --release  
 cp ./target/release/$APP_NAME /bin/server
 EOF
 
