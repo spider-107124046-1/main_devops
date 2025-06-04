@@ -1,8 +1,10 @@
 # syntax=docker/dockerfile:1
 # Adapted from https://docs.docker.com/guides/nodejs/containerize/
 
+################################################################################
+# Create a stage for building the site
 ARG NODE_VERSION=18
-FROM node:${NODE_VERSION}-alpine
+FROM node:${NODE_VERSION}-alpine AS build
 
 # Use production node environment by default.
 ENV NODE_ENV=production
@@ -22,11 +24,21 @@ RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev
 
-# Copy the rest of the source files into the image.
-COPY . .
+# Build the site
+RUN --mount=type=bind,source=. \
+    --mount=type=cache,target=/root/.npm \
+    npm run build
 
-# Expose the port that the application listens on.
+################################################################################
+# Final image, minimal runtime environment
+FROM nginx:alpine AS final
+
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy static build output from build stage
+COPY --from=build /usr/src/app/dist /usr/share/nginx/html
+
 EXPOSE 3000
 
-# Run the application.
-CMD ["npm", "start"]
+# Entrypoint inherited from nginx image
