@@ -62,6 +62,9 @@ RUN adduser \
     appuser
 USER appuser
 
+# Copy the diesel CLI from the build stage
+COPY --from=build /usr/local/cargo/bin/diesel /usr/local/bin/diesel
+
 # Copy the executable from the "build" stage.
 COPY --from=build /bin/server /bin/
 
