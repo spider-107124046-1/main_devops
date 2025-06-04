@@ -13,7 +13,9 @@
 
 #### Prerequisites
 
-Configure `nginx.conf` in frontend if you want to setup HTTPS.
+If you want to use HTTP (or use an external reverse proxy for HTTPS), you don't need to take any action on `nginx.conf`. 
+
+If you want to use an existing certificate to host the site on HTTPS, copy `nginx-https.conf` to `nginx.conf`, and **change "yourdomain.com" to your actual domain in both `nginx.conf` and `docker-compose.yml`.**
 
 ```bash
 docker network create authentication-app_default
@@ -62,7 +64,7 @@ docker run -d \
   authentication-app-frontend
 ```
 
-Note that healthchecks are not included with the command.
+Note that healthchecks and TLS certificate mounting are not included with the command. **Use Docker Compose method for more control.**
 
 ### Setup with Docker Compose (Recommended)
 
