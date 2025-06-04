@@ -13,13 +13,15 @@
 
 #### Prerequisites
 
+Configure `nginx.conf` in frontend if you want to setup HTTPS.
+
 ```bash
 docker network create authentication-app_default
 docker volume create db_data
 cd Frontend # pwd: <repo_name>/Frontend/
-docker build -t authentication-app_frontend .
+docker build -t authentication-app-frontend .
 cd ../Backend # pwd: <repo_name>/Backend/
-docker build -t authentication-app_backend .
+docker build -t authentication-app-backend .
 
 export POSTGRES_USER=myuser
 export POSTGRES_PASSWORD=mypassword
@@ -43,22 +45,24 @@ docker run -d \
 
 ```bash
 docker run -d \
-  --name authentication-app_backend \
+  --name authentication-app-backend \
   --network authentication-app_default \
   # -p 8080:8080 # if you want to expose the API to the public \ 
   -e DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@authentication-app_db:5432/${POSTGRES_DB:-rust_server} \
-  authentication-app_backend
+  authentication-app-backend
 ```
 
 #### Frontend
 
 ```bash
 docker run -d \
-  --name authentication-app_frontend \
+  --name authentication-app-frontend \
   --network authentication-app_default \
   -p 3000:3000 \
-  authentication-app_frontend
+  authentication-app-frontend
 ```
+
+Note that healthchecks are not included with the command.
 
 ### Setup with Docker Compose (Recommended)
 
