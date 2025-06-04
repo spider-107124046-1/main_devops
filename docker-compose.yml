@@ -47,6 +47,7 @@ services:
       target: final
     ports:
       # Change the port if needed
+      # if you are using an external reverse proxy, you can comment the ports section
       - "3000:3000"
     depends_on:
       - backend
@@ -56,11 +57,12 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
+    # Ignore if using an external reverse proxy!
     # Example letsencrypt certificate configuration
     # Uncomment the following lines to enable SSL
-    # Make sure to enable HTTPS in the nginx config
+    # Make sure to replace nginx.conf with nginx-https.conf
     # volumes:
-    #   - /etc/letsencrypt/sites/frontend:/etc/letsencrypt/sites/frontend
+    #   - /etc/letsencrypt/live/yourdomain.com:/etc/letsencrypt/live/yourdomain.com:ro
 
 volumes:
   db_data:
