@@ -2,7 +2,7 @@
 # Adapted from https://docs.docker.com/guides/rust/develop/
 
 ################################################################################
-# Create a stage for building the application.
+# Create a stage for building the application
 
 ARG RUST_VERSION=1.87
 ARG APP_NAME=login-app-backend
@@ -62,10 +62,10 @@ RUN adduser \
     appuser
 USER appuser
 
-# Copy the diesel CLI from the build stage
+# Copy the diesel CLI from the build stage, to manage migrations
 COPY --from=build /usr/local/cargo/bin/diesel /usr/local/bin/diesel
 
-# Copy the executable from the "build" stage.
+# Copy the server binary from the "build" stage
 COPY --from=build /bin/server /bin/
 
 EXPOSE 8080

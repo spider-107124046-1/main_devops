@@ -47,12 +47,23 @@ services:
   frontend:
     build:
       context: Frontend
+      target: final
     ports:
       # Change the port if needed
       - "3000:3000"
     depends_on:
       - backend
-    # how to set the backend URL for axios???
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    # Example letsencrypt certificate configuration
+    # Uncomment the following lines to enable SSL
+    # Make sure to enable HTTPS in the nginx config
+    # volumes:
+    #   - /etc/letsencrypt/sites/frontend:/etc/letsencrypt/sites/frontend
 
 volumes:
   db_data:
