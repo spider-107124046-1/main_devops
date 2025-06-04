@@ -71,3 +71,11 @@ Note that healthchecks and TLS certificate mounting are not included with the co
 - Copy the `.env.example` file to `.env` and edit the database credentials
 - Edit the `docker-compose.yml` file
 - Run `docker compose up -d --build` to build and start the containers.
+
+### Access the Services
+
+By default, the frontend service is exposed to `<server-ip>:3000`. You can access both the frontend and backend by visiting `http://<server-ip>:3000`. \[For instance, if you are using the browser on the same computer on which docker is running, `http://localhost:3000`\]
+
+### Troubleshooting
+
+
