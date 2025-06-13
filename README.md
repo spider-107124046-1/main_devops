@@ -1,5 +1,7 @@
 # Spider Devops Inductions - Task 2
 
+### [Read the documentation here](Documentation.md)
+
 ### Tech Stack
 
 - Language: *Rust*

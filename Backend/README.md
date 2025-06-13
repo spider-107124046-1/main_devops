@@ -9,3 +9,14 @@ cargo build
 ```
 
 Compiled executable `login-app-backend` will be available to run inside the `target` directory.
+
+### Running:
+
+Ensure that the PostgreSQL server is setup and running, and the credentials are saved to .env in the form of a postgres URI. Then run:
+
+```bash
+# in the root of the Backend/ folder
+diesel setup # to migrate tables
+```
+
+For testing, use `cargo run`. For production, execute the compiled binary (built using the aforementioned steps) in the `target` directory.
