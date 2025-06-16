@@ -99,3 +99,35 @@ services:
       - "3000:3000"
 ### rest of the config ###
 ```
+
+***
+
+Back on the task, lets continue
+
+### Nginx setup
+
+I would like to deviate from the previous setup and include the nginx.conf as a mount instead of copying it to the container during build time, for more customizability.
+
+#### Reverse Proxy
+
+We've already setup the reverse proxy such that only the API requests made through the website (directly on root `/` without a special endpoint like `/api` according to the code) are forwarded to the rust backend. Additionally forwarding requests via `/api` just needs a simple modification to our [nginx configuration](Frontend/nginx.conf):
+
+```diff
+    # Proxy API requests to backend
+-    location ~ ^/(createUser|getUser|loginUser) {
++    location ~ ^/(api/.*|createUser|getUser|loginUser) {
+        proxy_pass http://backend:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+```
+
+Endpoints are being kept until the developer of the frontend app modifies the requests to be sent through `/api/`.
+
+#### HTTPS Enforcing and CORS
+
+If we would like to enforce https, we should supply only nginx-https.conf and not the previously available nginx.conf. In place of the sample letsencrypt configuration, as mentioned in the problem definition, we will add a build step to generate a self-signed SSL certificate for use in the nginx configuration.
+
+If the deployment uses an external reverse proxy, the default nginx.conf could be edited to match the previously http-only nginx.conf, but the entrypoint will unnecessarily create a certificate
+
+#### gzip Compression
+

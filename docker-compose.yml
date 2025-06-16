@@ -3,21 +3,16 @@ name: authentication-app # Name found in Frontend
 
 services:
   backend:
+    restart: always
     build:
       context: Backend
       target: final
     depends_on:
       db:
         condition: service_healthy
-    # Ideally the backend's healthcheck should be like this, but endpoints.rs doesnt give a status endpoint
-    # I have included a sample healthcheck below, do not uncomment it unless status endpoint is added
-    # healthcheck:
-    #   test: ["CMD-SHELL", "curl -f http://localhost:8080/status || exit 1"]
-    #   interval: 1m30s
-    #   timeout: 30s
-    #   retries: 5
+    # As endpoints.rs doesnt give a status endpoint,
     # https://stackoverflow.com/questions/46362935/how-to-add-a-docker-health-check-to-test-a-tcp-port-is-open
-    # A generic healthcheck is included here with curl
+    # a generic healthcheck is included here with curl
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
       interval: 1m30s
@@ -28,6 +23,7 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
 
   db:
+    restart: always
     image: postgres:16
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -42,27 +38,39 @@ services:
       retries: 5
 
   frontend:
+    restart: always
     build:
       context: Frontend
       target: final
     ports:
-      # Change the port if needed
-      # if you are using an external reverse proxy, you can comment the ports section
-      - "3000:3000"
+      # To use external reverse proxy, please edit nginx.conf and change the ports here
+      - "443:443"
+      - "80:80"
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
+      test: ["CMD-SHELL", "curl -f https://localhost:443/ || exit 1"]
       interval: 1m30s
       timeout: 30s
       retries: 5
       start_period: 30s
-    # Ignore if using an external reverse proxy!
-    # Example letsencrypt certificate configuration
-    # Uncomment the following lines to enable SSL
-    # Make sure to replace nginx.conf with nginx-https.conf
-    # volumes:
-    #   - /etc/letsencrypt/live/yourdomain.com:/etc/letsencrypt/live/yourdomain.com:ro
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/frontend.conf:ro
+      # Comment the following lines if using own certificate
+      - frontend_certs:/etc/ssl/certs
+      - frontend_keys:/etc/ssl/private
+
+      # Supply a gzip configuration to enable gzip compression #
+      # - ./gzip.conf:/etc/nginx/conf.d/gzip.conf:ro
+
+      # Example letsencrypt certificate configuration #
+      # Uncomment the following lines to use own certificate
+      # To use external reverse proxy, please edit nginx.conf and ignore this section
+      # - /etc/letsencrypt/live/yourdomain.com/cert.pem:/etc/ssl/certs/frontend.pem:ro
+      # - /etc/letsencrypt/live/yourdomain.com/privkey.pem:/etc/ssl/private/frontend.key:ro
 
 volumes:
   db_data:
+  # Remove the following volumes if using own certificate
+  frontend_certs:
+  frontend_keys:

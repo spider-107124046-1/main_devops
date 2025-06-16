@@ -33,6 +33,12 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy static build output from build stage
 COPY --from=build /usr/src/app/build /usr/share/nginx/html
 
-EXPOSE 3000
+EXPOSE 80
 
-# Entrypoint inherited from nginx image
+EXPOSE 443
+
+# Entrypoint modified to include certificate generation
+COPY ./entrypoint.sh /
+RUN chmod +x /entrypoint.sh
+
+CMD ["/entrypoint.sh"]
