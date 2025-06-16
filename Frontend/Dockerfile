@@ -27,6 +27,8 @@ RUN npm run build
 # Final image, minimal runtime environment
 FROM nginx:alpine AS final
 
+RUN apk add --no-cache openssl
+
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
