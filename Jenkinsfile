@@ -44,7 +44,7 @@ pipeline {
       agent {
         docker {
           reuseNode true
-          image 'rust:1.87-slim'
+          image 'rust:1.87-alpine'
         }
       }
       steps {
