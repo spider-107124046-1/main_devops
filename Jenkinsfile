@@ -34,7 +34,8 @@ pipeline {
           sh 'npm ci'
           // sh 'npm run lint' but lint script isnt defined
           sh 'npx eslint . --ext .js,.ts,.jsx,.tsx'
-          sh 'npm test'
+          // no tests in test script so it will fail
+          sh 'npm run test -- --passWithNoTests'
         }
       }
     }
