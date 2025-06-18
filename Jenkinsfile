@@ -1,5 +1,5 @@
 pipeline {
-  agent { label 'docker' }
+  agent { node { label 'docker' } }
 
   environment {
     IMAGE_PREFIX = "pseudopanda/login-app"
