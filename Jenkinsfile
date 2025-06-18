@@ -1,5 +1,5 @@
 pipeline {
-  agent none
+  agent { label 'docker' }
 
   environment {
     IMAGE_PREFIX = "pseudopanda/login-app"
@@ -23,7 +23,12 @@ pipeline {
 
   stages {
     stage('Lint & Test Frontend') {
-      agent { docker { image 'node:18-alpine' } }
+      agent {
+        docker {
+          reuseNode true
+          image 'node:18-alpine' 
+        }
+      }
       steps {
         dir('Frontend') {
           sh 'npm ci'
@@ -35,7 +40,12 @@ pipeline {
     }
 
     stage('Lint & Test Backend') {
-      agent { docker { image 'rust:1.87-slim' } }
+      agent {
+        docker {
+          reuseNode true
+          image 'rust:1.87-slim'
+        }
+      }
       steps {
         dir('Backend') {
           sh 'cargo fmt -- --check'
@@ -48,10 +58,13 @@ pipeline {
 
     stage('Build & Push Docker Images') {
       when { branch 'main' }
-      agent { docker { 
-        image 'docker:latest' 
-        args '--host=unix:///var/run/docker.sock -v /var/run/docker.sock:/var/run/docker.sock' 
-      } }
+      agent {
+        docker { 
+          reuseNode true
+          image 'docker:latest' 
+          args '--host=unix:///var/run/docker.sock -v /var/run/docker.sock:/var/run/docker.sock' 
+        }
+      }
       steps {
         script {
           docker.withRegistry('', 'docker-hub') {
