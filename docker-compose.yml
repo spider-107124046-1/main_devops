@@ -56,7 +56,6 @@ services:
       start_period: 30s
     volumes:
       - ./Frontend/nginx.conf:/etc/nginx/conf.d/frontend.conf:ro
-      - ./Frontend/gzip.conf:/etc/nginx/conf.d/gzip.conf:ro
       # Comment the following lines if using own certificate #
       - frontend_certs:/etc/ssl/certs
       - frontend_keys:/etc/ssl/private
