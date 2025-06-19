@@ -69,14 +69,18 @@ pipeline {
             dir('Frontend') {
               def frontendImage = docker.build("${IMAGE_PREFIX}-frontend:${env.BUILD_ID}")
               frontendImage.push()
-              frontendImage.push('latest')
+              // Tag and push latest version
+              sh "docker tag ${IMAGE_PREFIX}-frontend:${env.BUILD_ID} ${IMAGE_PREFIX}-frontend:latest"
+              sh "docker push ${IMAGE_PREFIX}-frontend:latest"
             }
 
             // Build and push backend image
             dir('Backend') {
               def backendImage = docker.build("${IMAGE_PREFIX}-backend:${env.BUILD_ID}")
               backendImage.push()
-              backendImage.push('latest')
+              // Tag and push latest version
+              sh "docker tag ${IMAGE_PREFIX}-backend:${env.BUILD_ID} ${IMAGE_PREFIX}-backend:latest"
+              sh "docker push ${IMAGE_PREFIX}-backend:latest"
             }
           }
         }
@@ -109,7 +113,7 @@ pipeline {
     //        body: "${env.JOB_NAME} build #${env.BUILD_NUMBER} (<${env.BUILD_URL}>) failed."
     // }
     success {
-      echo "Current branch: ${env.BRANCH_NAME}"
+      // Send success notification to some webhook or use the above mail example to send mail
       echo "Pipeline successfully completed!"
     }
   }
