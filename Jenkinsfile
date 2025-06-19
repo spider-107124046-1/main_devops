@@ -51,7 +51,7 @@ pipeline {
       }
       steps {
         dir('Backend') {
-          // BROTHER FIX YOUR CODE
+          sh 'cargo update time'
           // sh 'cargo fmt -- --check'
           // Not enforcing with -- -D warnings because the project contains some warnings
           sh 'cargo clippy'
