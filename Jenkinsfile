@@ -66,7 +66,7 @@ pipeline {
         docker { 
           reuseNode true
           image 'docker:latest' 
-          args '--host=unix:///var/run/docker.sock -v /var/run/docker.sock:/var/run/docker.sock' 
+          args '-v /var/run/docker.sock:/var/run/docker.sock' 
         }
       }
       steps {
