@@ -91,12 +91,12 @@ pipeline {
       when { branch 'main' }
       agent { label 'ssh-agent' }
       steps {
-        sshagent(['tn-svm-ssh']) {
+        sshagent(['tn-svm-login-app-deploy']) {
           sh '''
-            ssh -o StrictHostKeyChecking=no ilam@192.168.1.69 << 'EOF'
+            ssh -o StrictHostKeyChecking=no login-app-deploy@192.168.1.69 << 'EOF'
             cd /mnt/more/login-app
             docker compose pull
-            docker compose up -d --remove-orphans
+            docker compose up -d
             EOF
           '''
         }

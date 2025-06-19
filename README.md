@@ -13,6 +13,10 @@
 
 ### Docker Setup
 
+Watch explanation video here:
+
+\<Youtube Embed\>
+
 #### Prerequisites
 
 If you want to use HTTP (or use an external reverse proxy for HTTPS), you don't need to take any action on `nginx.conf`. 
@@ -70,13 +74,17 @@ Note that healthchecks and TLS certificate mounting are not included with the co
 
 ### Setup with Docker Compose (Recommended)
 
+- Clone the repository (easiest) or Copy the files `docker-compose.yml`, `.env.example`, `Frontend/nginx.conf`, and optionally, `Frontend/gzip.conf` (to enable gzip compression) and `Frontend/blacklist.conf` (to blacklist IPs) \[See comments in [docker-compose.yml](docker-compose.yml) for more info.\].
 - Copy the `.env.example` file to `.env` and edit the database credentials
-- Edit the `docker-compose.yml` file
-- Run `docker compose up -d --build` to build and start the containers.
+- Edit the nginx configuration to set domain and SSL certificate
+- Edit the `docker-compose.yml` file, make sure to match the nginx configuration wherever applicable.
+- Run `docker compose up -d` to start the containers.
+
+Alternatively, you may clone the repository and build the image yourself by using docker-compose-build.yml instead of docker-compose.yml, as opposed to pulling the image from Docker Hub.
 
 ### Access the Services
 
-By default, the frontend service is exposed to `<server-ip>:3000`. You can access both the frontend and backend by visiting `http://<server-ip>:3000`. \[For instance, if you are using the browser on the same computer on which docker is running, `http://localhost:3000`\]
+By default, the frontend service is exposed to `<server-ip>:443` (and a redirect to https on port 80). You can access both the frontend and backend by visiting `https://<server-ip>`. \[For instance, if you are using the browser on the same computer on which docker is running, `https://localhost`. This may bring up certificate issues if you are using the default configuration.\]
 
 ### Troubleshooting
 

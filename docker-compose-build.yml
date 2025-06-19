@@ -3,7 +3,10 @@ name: login-app # Name found in Backend Cargo.toml
 
 services:
   backend:
-    image: pseudopanda/login-app-backend:latest
+    restart: always
+    build:
+      context: Backend
+      target: final
     depends_on:
       db:
         condition: service_healthy
@@ -35,7 +38,10 @@ services:
       retries: 5
 
   frontend:
-    image: pseudopanda/login-app-frontend:latest
+    restart: always
+    build:
+      context: Frontend
+      target: final
     ports:
       # To use external reverse proxy, please edit nginx.conf and change the ports here
       - "443:443"
