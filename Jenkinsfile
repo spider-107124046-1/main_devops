@@ -49,6 +49,7 @@ pipeline {
       }
       steps {
         dir('Backend') {
+          sh 'rustup component add rustfmt clippy'
           sh 'cargo fmt -- --check'
           // Not enforcing with -- -D warnings because the project contains some warnings
           sh 'cargo clippy'
