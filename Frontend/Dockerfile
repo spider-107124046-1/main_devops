@@ -29,9 +29,6 @@ FROM nginx:alpine AS final
 
 RUN apk add --no-cache openssl
 
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
 # Copy static build output from build stage
 COPY --from=build /usr/src/app/build /usr/share/nginx/html
 
