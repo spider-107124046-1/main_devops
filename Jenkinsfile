@@ -62,13 +62,6 @@ pipeline {
 
     stage('Build & Push Docker Images') {
       when { branch 'main' }
-      agent {
-        docker { 
-          reuseNode true
-          image 'docker:latest' 
-          args '-v /var/run/docker.sock:/var/run/docker.sock' 
-        }
-      }
       steps {
         script {
           docker.withRegistry('', 'docker-hub') {
