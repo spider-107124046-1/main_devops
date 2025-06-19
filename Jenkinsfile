@@ -109,6 +109,7 @@ pipeline {
     //        body: "${env.JOB_NAME} build #${env.BUILD_NUMBER} (<${env.BUILD_URL}>) failed."
     // }
     success {
+      echo "Current branch: ${env.BRANCH_NAME}"
       echo "Pipeline successfully completed!"
     }
   }
