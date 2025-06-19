@@ -42,15 +42,15 @@ pipeline {
 
     stage('Lint & Test Backend') {
       agent {
-        docker {
+        dockerfile {
           reuseNode true
-          image 'rust:1.87-slim'
+          filename 'Dockerfile.test'
+          dir 'Backend'
+          additionalBuildArgs '--build-arg RUST_BACKTRACE=1'
         }
       }
       steps {
         dir('Backend') {
-          sh 'rustup component add rustfmt clippy'
-          sh 'cargo update -p time'
           // BROTHER FIX YOUR CODE
           // sh 'cargo fmt -- --check'
           // Not enforcing with -- -D warnings because the project contains some warnings
