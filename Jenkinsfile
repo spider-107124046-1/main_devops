@@ -93,11 +93,11 @@ pipeline {
       steps {
         sshagent(['tn-svm-login-app-deploy']) {
           sh '''
-            ssh -o StrictHostKeyChecking=no login-app-deploy@192.168.1.69 << 'EOF'
-            cd /mnt/more/login-app
-            docker compose pull
-            docker compose up -d
-          EOF
+            ssh -o StrictHostKeyChecking=no login-app-deploy@192.168.1.69 "\
+              cd /mnt/more/login-app && \
+              docker compose pull && \
+              docker compose up -d \
+            "
           '''
         }
       }
