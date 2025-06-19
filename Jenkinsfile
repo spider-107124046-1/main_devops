@@ -44,12 +44,13 @@ pipeline {
       agent {
         docker {
           reuseNode true
-          image 'rust:1.87-alpine'
+          image 'rust:1.87-slim'
         }
       }
       steps {
         dir('Backend') {
           sh 'rustup component add rustfmt clippy'
+          sh 'cargo update -p time'
           // BROTHER FIX YOUR CODE
           // sh 'cargo fmt -- --check'
           // Not enforcing with -- -D warnings because the project contains some warnings
