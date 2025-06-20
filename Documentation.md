@@ -165,7 +165,7 @@ Read the documentation at [https://nginx.org/en/docs/http/ngx_http_gzip_module.h
 
 The current pipeline defined in the [Jenkinsfile](Jenkinsfile) needs to be setup as a Multibranch Pipeline in the Jenkins server. It is best to have the GitHub plugin installed on the server so that we can take advantage of commit and pull request checking. Either the Jenkinsfile, or the credentials at the server side, should be modified accordingly for both GitHub integration (via Personal Access Tokens as username-password credential object) and deployment over SSH (as SSH private key object provided by Jenkins default credentials provider). Here is an example of a successful pipeline run https://ci.10082006.xyz/job/Spider%20107124046%20Tasks/job/login-app/job/main/
 
-<image>
+![image](https://github.com/user-attachments/assets/e94d992f-bcbe-4e27-bb22-e49847e90fbf)
 
 Since GitHub's webhook dispatcher is unable to connect to my server which is open over IPv6 only, the automated builds had to be simulated with this command:
 
@@ -175,7 +175,7 @@ curl -X POST https://ci.10082006.xyz/github-webhook/ -H "Content-Type: applicati
 
 where `payload.json` contains the json content that was failed to be sent to the configured webhook in the repository's Settings > Webhooks > Recent Deliveries tab
 
-<image>
+![image](https://github.com/user-attachments/assets/99ed98e4-de6b-4547-8154-cd1c282912a7)
 
 ### Best Practices
 
