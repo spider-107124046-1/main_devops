@@ -11,25 +11,36 @@
 - Frontend: *React*
 - Compilers: *Rust v1.7.0 and node v18.0.0*
 
+### Setup with Docker Compose (Recommended)
+
+1. Clone the repository (easiest) or Copy the files `docker-compose.yml`, `.env.example`, `Frontend/nginx.conf`, and optionally, `Frontend/gzip.conf` (to enable gzip compression) and `Frontend/blacklist.conf` (to blacklist IPs) \[See comments in [docker-compose.yml](docker-compose.yml) for more info.\].
+2. Copy the `.env.example` file to `.env` and edit the database credentials
+3. Edit the nginx configuration to set domain
+4. Edit the `docker-compose.yml` file, make sure to match the nginx configuration wherever applicable (for instance, the path to the SSL certificate and private key).
+5. Run `docker compose up -d` to start the containers.
+
+Alternatively, you may clone the repository and build the image yourself by using docker-compose-build.yml instead of docker-compose.yml, as opposed to pulling the image from Docker Hub.
+
 ### Docker Setup
-
-Watch explanation video here:
-
-\<Youtube Embed\>
 
 #### Prerequisites
 
-If you want to use HTTP (or use an external reverse proxy for HTTPS), you don't need to take any action on `nginx.conf`. 
+**This service enforces HTTPS!**
 
-If you want to use an existing certificate to host the site on HTTPS, copy `nginx-https.conf` to `nginx.conf`, and **change "yourdomain.com" to your actual domain in both `nginx.conf` and `docker-compose.yml`.**
+If you want to use an external reverse proxy for HTTPS, **modify the supplied `nginx.conf` to use a different port and remove the SSL lines**. 
+
+If you want to use an existing certificate to host the site on HTTPS, mount your certificate and private key at `/etc/ssl/certs/frontend.pem` and `/etc/ssl/certs/frontend.key` respectively.
+
+If you don't supply a certificate, by default, the frontend container generates a new self-signed certificate on startup.
 
 ```bash
-docker network create authentication-app_default
+docker network create login-app_default
 docker volume create db_data
+# You can also use the registry images at pseudopanda/login-app-frontend and pseudopanda/login-app-backend
 cd Frontend # pwd: <repo_name>/Frontend/
-docker build -t authentication-app-frontend .
+docker build -t login-app-frontend .
 cd ../Backend # pwd: <repo_name>/Backend/
-docker build -t authentication-app-backend .
+docker build -t login-app-backend .
 
 export POSTGRES_USER=myuser
 export POSTGRES_PASSWORD=mypassword
@@ -40,12 +51,16 @@ export POSTGRES_DB=mydb
 
 ```bash
 docker run -d \
-  --name authentication-app_db \
-  --network authentication-app_default \
-  -e POSTGRES_USER \
-  -e POSTGRES_PASSWORD \
-  -e POSTGRES_DB \
+  --name login-app_db \
+  --restart always \
+  -e POSTGRES_USER="$POSTGRES_USER" \
+  -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+  -e POSTGRES_DB="$POSTGRES_DB" \
   -v db_data:/var/lib/postgresql/data \
+  --health-cmd="pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" \
+  --health-interval=10s \
+  --health-timeout=5s \
+  --health-retries=5 \
   postgres:16
 ```
 
@@ -53,34 +68,38 @@ docker run -d \
 
 ```bash
 docker run -d \
-  --name authentication-app-backend \
-  --network authentication-app_default \
-  # -p 8080:8080 # if you want to expose the API to the public \ 
-  -e DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@authentication-app_db:5432/${POSTGRES_DB:-rust_server} \
-  authentication-app-backend
+  --name login-app-backend \
+  --restart always \
+  --link login-app_db:db \
+  -e DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}" \
+  --health-cmd="curl -f http://localhost:8080/ || exit 1" \
+  --health-interval=90s \
+  --health-timeout=30s \
+  --health-retries=5 \
+  --health-start-period=30s \
+  pseudopanda/login-app-backend:latest # or simply login-app-backend if you built the image
 ```
 
 #### Frontend
 
 ```bash
 docker run -d \
-  --name authentication-app-frontend \
-  --network authentication-app_default \
-  -p 3000:3000 \
-  authentication-app-frontend
+  --name login-app-frontend \
+  --restart always \
+  -p 443:443 \
+  -p 80:80 \
+  --link login-app-backend:backend \
+  -v "$(pwd)/Frontend/nginx.conf:/etc/nginx/conf.d/frontend.conf:ro" \
+  -v <PATH TO SSL CERTIFICATE>:/etc/ssl/certs/frontend.pem \
+  -v <PATH TO SSL PRIVATE KEY>:/etc/ssl/private/frontend.key \
+  -v "$(pwd)/Frontend/gzip.conf:/etc/nginx/conf.d/gzip.conf:ro" \
+  --health-cmd="curl -kf https://localhost/ || exit 1" \
+  --health-interval=90s \
+  --health-timeout=30s \
+  --health-retries=5 \
+  --health-start-period=30s \
+  pseudopanda/login-app-frontend:latest # or simply login-app-frontend if you built the image
 ```
-
-Note that healthchecks and TLS certificate mounting are not included with the command. **Use Docker Compose method for more control.**
-
-### Setup with Docker Compose (Recommended)
-
-- Clone the repository (easiest) or Copy the files `docker-compose.yml`, `.env.example`, `Frontend/nginx.conf`, and optionally, `Frontend/gzip.conf` (to enable gzip compression) and `Frontend/blacklist.conf` (to blacklist IPs) \[See comments in [docker-compose.yml](docker-compose.yml) for more info.\].
-- Copy the `.env.example` file to `.env` and edit the database credentials
-- Edit the nginx configuration to set domain and SSL certificate
-- Edit the `docker-compose.yml` file, make sure to match the nginx configuration wherever applicable.
-- Run `docker compose up -d` to start the containers.
-
-Alternatively, you may clone the repository and build the image yourself by using docker-compose-build.yml instead of docker-compose.yml, as opposed to pulling the image from Docker Hub.
 
 ### Access the Services
 
@@ -90,7 +109,7 @@ By default, the frontend service is exposed to `<server-ip>:443` (and a redirect
 
 #### The login and register pages load, but on clicking login or register, nothing happens.
 
-1. Check the logs of the frontend container: `docker logs authentication-app-frontend-1` (replace with your container name)
+1. Check the logs of the frontend container: `docker logs login-app-frontend-1` (replace with your container name)
 2. Identify the `[error]`. It is most likely failing to connect to the backend
 3. Check if your environment file is correctly configured
 4. Check if the backend container is running. If not, run it with `docker compose up -d` or the specified docker command
@@ -102,9 +121,9 @@ By default, the frontend service is exposed to `<server-ip>:443` (and a redirect
 
 1. Ensure that all 3 containers are running (`docker ps`). If not, start them with `docker compose up -d`
 2. Check if your environment file is correctly configured
-3. Check whether the frontend container is able to connect to the backend. To do this, run `docker exec -it authentication-app-frontend-1 curl backend:8080` (replace with your container name). The command should return "Hello, Actix Web!": <br><br> ![image](https://github.com/user-attachments/assets/b3c093c7-d204-419a-9081-7c6982893fd8) <br> If not, check if both containers are in the same network, and add them to the same network. `docker container inspect authentication-app-frontend-1 | jq '.[0].NetworkSettings.Networks'` [or `docker inspect --format='{{json .NetworkSettings.Networks}}' authentication-app-frontend-1`] (replace with your container names) <br><br> ![image](https://github.com/user-attachments/assets/c225dabc-d8da-41f3-bedd-285c8e57cbb1) <br> This should not be a problem with the default docker compose configuration.<br><br>
-4. If the frontend is able to connect to the backend, check whether the backend container is able to connect to the frontend. `docker exec -it authentication-app-backend-1 curl frontend:3000` <br><br> ![image](https://github.com/user-attachments/assets/c71c2b8b-8bb4-485d-8f0e-9ceda82c7b41) <br> If not, check for any misconfigured firewall rules and remove them (`iptables -L`, `nft list ruleset`,  `ufw status numbered`).<br><br>
-5. Check if the backend is able to connect to the database: `docker logs authentication-app-backend-1`. Database errors such as:
+3. Check whether the frontend container is able to connect to the backend. To do this, run `docker exec -it login-app-frontend-1 curl backend:8080` (replace with your container name). The command should return "Hello, Actix Web!": <br><br> ![image](https://github.com/user-attachments/assets/b3c093c7-d204-419a-9081-7c6982893fd8) <br> If not, check if both containers are in the same network, and add them to the same network. `docker container inspect login-app-frontend-1 | jq '.[0].NetworkSettings.Networks'` [or `docker inspect --format='{{json .NetworkSettings.Networks}}' login-app-frontend-1`] (replace with your container names) <br><br> ![image](https://github.com/user-attachments/assets/c225dabc-d8da-41f3-bedd-285c8e57cbb1) <br> This should not be a problem with the default docker compose configuration.<br><br>
+4. If the frontend is able to connect to the backend, check whether the backend container is able to connect to the frontend. `docker exec -it login-app-backend-1 curl -k frontend:443` <br><br> ![image](https://github.com/user-attachments/assets/c71c2b8b-8bb4-485d-8f0e-9ceda82c7b41) <br> If not, check for any misconfigured firewall rules and remove them (`iptables -L`, `nft list ruleset`,  `ufw status numbered`).<br><br>
+5. Check if the backend is able to connect to the database: `docker logs login-app-backend-1`. Database errors such as:
 
 ```log
 [2025-06-04T14:17:09Z ERROR r2d2] server closed the connection unexpectedly
