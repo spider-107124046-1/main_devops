@@ -3,6 +3,7 @@ name: login-app # Name found in Backend Cargo.toml
 
 services:
   backend:
+    restart: always
     image: pseudopanda/login-app-backend:latest
     depends_on:
       db:
@@ -35,6 +36,7 @@ services:
       retries: 5
 
   frontend:
+    restart: always
     image: pseudopanda/login-app-frontend:latest
     ports:
       # To use external reverse proxy, please edit nginx.conf and change the ports here
@@ -56,7 +58,7 @@ services:
       - frontend_keys:/etc/ssl/private
 
       # Supply a gzip configuration to enable gzip compression #
-      # - ./Frontend/gzip.conf:/etc/nginx/conf.d/gzip.conf:ro
+      - ./Frontend/gzip.conf:/etc/nginx/conf.d/gzip.conf:ro
       # Supply blacklist of IP addresses #
       # - ./Frontend/blacklist.conf:/etc/nginx/conf.d/blacklist.conf:ro
 

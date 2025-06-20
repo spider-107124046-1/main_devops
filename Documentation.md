@@ -106,7 +106,7 @@ Back on the task, lets continue
 
 ### Nginx setup
 
-I would like to deviate from the previous setup and include the nginx.conf as a mount instead of copying it to the container during build time, for more customizability.
+I would like to deviate from the previous setup and include the nginx.conf as a mount instead of copying it to the container during build time, for more customizability. 
 
 #### Reverse Proxy
 
@@ -114,20 +114,81 @@ We've already setup the reverse proxy such that only the API requests made throu
 
 ```diff
     # Proxy API requests to backend
--    location ~ ^/(createUser|getUser|loginUser) {
-+    location ~ ^/(api/.*|createUser|getUser|loginUser) {
+-   location ~ ^/(createUser|getUser|loginUser) {
++   location ~ ^/(api/.*|createUser|getUser|loginUser) {
++       rewrite ^/api/(.*)$ /$1 break;
         proxy_pass http://backend:8080;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
 ```
 
-Endpoints are being kept until the developer of the frontend app modifies the requests to be sent through `/api/`.
+Endpoints are being kept until the developer of the frontend app modifies the requests to be sent through `/api/`. The request is being rewritten because the backend does not take the `/api/` part of the request URI.
 
 #### HTTPS Enforcing and CORS
 
-If we would like to enforce https, we should supply only nginx-https.conf and not the previously available nginx.conf. In place of the sample letsencrypt configuration, as mentioned in the problem definition, we will add a build step to generate a self-signed SSL certificate for use in the nginx configuration.
+We modify the previous setup a bit and change the nginx.conf file to use an existing ssl certificate (mounted with docker). If the admin does not mount a certificate, the entrypoint script of the frontend will generate its own self-signed certificate on startup. This is how far the enforcing goes. The admin can still change the configuration to host the server without https (to use an external https reverse proxy for example).
 
-If the deployment uses an external reverse proxy, the default nginx.conf could be edited to match the previously http-only nginx.conf, but the entrypoint will unnecessarily create a certificate
+HTTP to HTTPS redirection is handled by this server block in nginx.conf:
+
+```conf
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name yourdomain.com;
+    return 301 https://$host$request_uri;
+}
+```
+
+Cross Origin Resource Sharing (CORS) headers control which external websites (origins) are allowed to access the resources hosted on this webserver, via the browser. 
+
+```conf
+    # CORS headers
+    add_header 'Access-Control-Allow-Origin' 'https://yourdomain.com' always;
+    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+    add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization' always;
+    add_header 'Access-Control-Allow-Credentials' 'true' always;
+```
+
+`Access-Control-Allow-Origin` allows only the specified origin to access resources on this server. The above configuration ensures that no other origin is allowed to access the resources, other than itself (same-origin requests are only allowed). (As the backend is hosted on the same compose project, the origin is same for both the API and the frontend. So there is no need of cross-origin requests)
+
+`Access-Control-Allow-Methods` restricts the type of requests that can be sent to the server. The `OPTIONS` request is something called a "Pre-flight request" which describes the communication options for the target resource. All other requests not mentioned here will be rejected.
+
+`Access-Control-Allow-Headers` restricts the allowed headers in the requests. 
+
+`Access-Control-Allow-Credentials` is safe to have as true here to help with API requests (as an example; this app does not implement authentication to use API), because we are controlling what origins can access our server.
 
 #### gzip Compression
 
+Read the documentation at [https://nginx.org/en/docs/http/ngx_http_gzip_module.html](https://nginx.org/en/docs/http/ngx_http_gzip_module.html) for more insight into the options listed in this configuration file [gzip.conf](Frontend/gzip.conf). This configuration is setup to be manually mounted by uncommenting the corresponding line in the docker compose configuration.
+
+### Jenkins CI/CD Pipeline
+
+The current pipeline defined in the [Jenkinsfile](Jenkinsfile) needs to be setup as a Multibranch Pipeline in the Jenkins server. It is best to have the GitHub plugin installed on the server so that we can take advantage of commit and pull request checking. Either the Jenkinsfile, or the credentials at the server side, should be modified accordingly for both GitHub integration (via Personal Access Tokens as username-password credential object) and deployment over SSH (as SSH private key object provided by Jenkins default credentials provider). Here is an example of a successful pipeline run https://ci.10082006.xyz/job/Spider%20107124046%20Tasks/job/login-app/job/main/
+
+<image>
+
+Since GitHub's webhook dispatcher is unable to connect to my server which is open over IPv6 only, the automated builds had to be simulated with this command:
+
+```bash
+curl -X POST https://ci.10082006.xyz/github-webhook/ -H "Content-Type: application/json" -H "X-GitHub-Event: push" -H "X-GitHub-Delivery: $(uuidgen)" -d @payload.json
+```
+
+where `payload.json` contains the json content that was failed to be sent to the configured webhook in the repository's Settings > Webhooks > Recent Deliveries tab
+
+<image>
+
+### Best Practices
+
+#### Docker
+
+- All final images run on alpine-based containers for a totally minimal setup.
+- Health checks are defined for each container.
+- Networking is done such that the database container (and the backend API container) is never directly exposed to the internet.
+- `restart: always` is mentioned for each container so accidental downtimes are avoided.
+- Build stage is separated from the final image to reduce bloat.
+
+#### Nginx
+
+- gzip compression configuration is supplied by default
+- Requests are throttled using `limit_req`
+- Security improving headers and CORS headers have been set [(See nginx.conf)](Frontend/nginx.conf)
