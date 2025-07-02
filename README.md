@@ -1,8 +1,8 @@
 # Spider Devops Inductions - Task 2
 
-### [Read the documentation here](Documentation.md)
+## [Read the documentation here](Documentation.md)
 
-### Tech Stack
+## Tech Stack
 
 - Language: *Rust*
 - Framework: *Actix-Web*
@@ -11,7 +11,7 @@
 - Frontend: *React*
 - Compilers: *Rust v1.7.0 and node v18.0.0*
 
-### Setup with Docker Compose (Recommended)
+## Setup with Docker Compose (Recommended)
 
 1. Clone the repository (easiest) or Copy the files `docker-compose.yml`, `.env.example`, `Frontend/nginx.conf`, and optionally, `Frontend/gzip.conf` (to enable gzip compression) and `Frontend/blacklist.conf` (to blacklist IPs) \[See comments in [docker-compose.yml](docker-compose.yml) for more info.\].
 2. Copy the `.env.example` file to `.env` and edit the database credentials
@@ -21,7 +21,7 @@
 
 Alternatively, you may clone the repository and build the image yourself by using docker-compose-build.yml instead of docker-compose.yml, as opposed to pulling the image from Docker Hub.
 
-### Docker Setup
+## Setup with Docker CLI
 
 #### Prerequisites
 
@@ -101,13 +101,13 @@ docker run -d \
   pseudopanda/login-app-frontend:latest # or simply login-app-frontend if you built the image
 ```
 
-### Access the Services
+## Access the Services
 
 By default, the frontend service is exposed to `<server-ip>:443` (and a redirect to https on port 80). You can access both the frontend and backend by visiting `https://<server-ip>`. \[For instance, if you are using the browser on the same computer on which docker is running, `https://localhost`. This may bring up certificate issues if you are using the default configuration.\]
 
-### Troubleshooting
+## Troubleshooting
 
-#### The login and register pages load, but on clicking login or register, nothing happens.
+### The login and register pages load, but on clicking login or register, nothing happens.
 
 1. Check the logs of the frontend container: `docker logs login-app-frontend-1` (replace with your container name)
 2. Identify the `[error]`. It is most likely failing to connect to the backend
@@ -115,7 +115,7 @@ By default, the frontend service is exposed to `<server-ip>:443` (and a redirect
 4. Check if the backend container is running. If not, run it with `docker compose up -d` or the specified docker command
 5. Check your docker compose and nginx configuration
 
-#### User not authenticated, even with correct password
+### User not authenticated, even with correct password
 
 ![image](https://github.com/user-attachments/assets/d9296867-3b32-405b-a756-d10bc3b0958f)
 
@@ -134,6 +134,6 @@ By default, the frontend service is exposed to `<server-ip>:443` (and a redirect
 ```
 indicate that the backend isnt able to connect to the database. Check if your environment file is correctly configured.
 
-#### 500/502 Error Code on frontend, or Frontend not loading
+### 500/502 Error Code on frontend, or Frontend not loading
 
 Check your nginx.conf for any syntax errors or misconfigration, then run `docker compose up -d --build` again. If that did not help, try all the above troubleshooting steps.

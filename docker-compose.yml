@@ -8,6 +8,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # "Observability": Uncomment the following two lines to log to host fs #
+    # volumes:
+    #   - ./Backend/logs/server:/var/log/login-app-backend:rw
     # As endpoints.rs doesnt give a status endpoint,
     # https://stackoverflow.com/questions/46362935/how-to-add-a-docker-health-check-to-test-a-tcp-port-is-open
     # a generic healthcheck is included here with curl
@@ -29,6 +32,17 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - db_data:/var/lib/postgresql/data
+    # "Observability": Uncomment the following lines to log to host fs #
+    #   - ./Backend/logs/db:/var/lib/postgresql/data/log:rw
+    # command:
+    #   [
+    #     "postgres",
+    #     "-c", "logging_collector=on",
+    #     "-c", "log_destination=stderr",
+    #     "-c", "log_directory=log",
+    #     "-c", "log_statement=all",
+    #     "-c", "log_rotation_age=1d"
+    #   ]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -67,6 +81,9 @@ services:
       # To use external reverse proxy, please edit nginx.conf and ignore this section
       # - /etc/letsencrypt/live/yourdomain.com/cert.pem:/etc/ssl/certs/frontend.pem:ro
       # - /etc/letsencrypt/live/yourdomain.com/privkey.pem:/etc/ssl/private/frontend.key:ro
+
+      # "Observability": Uncomment the following lines to log to host fs #
+      # - ./Frontend/logs:/var/log/nginx:rw
 
 volumes:
   db_data:

@@ -177,6 +177,8 @@ where `payload.json` contains the json content that was failed to be sent to the
 
 ![image](https://github.com/user-attachments/assets/99ed98e4-de6b-4547-8154-cd1c282912a7)
 
+**UPDATE:** I purchased a static IP for my home network, and this part now works as intended. Access the demo here: https://login-app-demo.10082006.xyz
+
 ### Best Practices
 
 #### Docker
@@ -184,7 +186,7 @@ where `payload.json` contains the json content that was failed to be sent to the
 - All final images run on alpine-based containers for a totally minimal setup.
 - Health checks are defined for each container.
 - Networking is done such that the database container (and the backend API container) is never directly exposed to the internet.
-- `restart: always` is mentioned for each container so accidental downtimes are avoided.
+- `restart: always` is mentioned for each container so accidental downtimes are avoided. ("Resiliency")
 - Build stage is separated from the final image to reduce bloat.
 
 #### Nginx
@@ -192,3 +194,9 @@ where `payload.json` contains the json content that was failed to be sent to the
 - gzip compression configuration is supplied by default
 - Requests are throttled using `limit_req`
 - Security improving headers and CORS headers have been set [(See nginx.conf)](Frontend/nginx.conf)
+
+**"Observability":** All 3 services redirect their logs both to stdout and their respective log directories. The docker compose configuration includes commented lines which can be uncommented to enable logging to the host machine. Logs can also be accessed using the `docker logs -t <container>` or `docker compose logs -t <service>` command.
+
+### My deployment
+
+I have a server running at my home which hosts the Jenkins server and has the configuration for the docker compose project. The Jenkinsfile is set to log into the server with the designated user and launch the compose project on each ~~workflow run~~ pipeline run
