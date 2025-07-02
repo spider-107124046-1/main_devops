@@ -199,4 +199,155 @@ where `payload.json` contains the json content that was failed to be sent to the
 
 ### My deployment
 
-I have a server running at my home which hosts the Jenkins server and has the configuration for the docker compose project. The Jenkinsfile is set to log into the server with the designated user and launch the compose project on each ~~workflow run~~ pipeline run
+I have a server running at my home which hosts the Jenkins server and has the configuration for the docker compose project. The Jenkinsfile is set to log into the server with the designated user and launch the compose project on each pipeline run. The frontend is exposed via a common reverse proxy (Nginx Proxy Manager) at https://login-app-demo.10082006.xyz [*note: availability subject to server uptime, if its not working try again later!*]. Here is the docker compose and nginx configuration on the server:
+
+```yaml
+login-app-deploy@pseudoforceyt-hs:/mnt/more/login-app$ cat docker-compose.yml 
+# Project name, this will be used to prefix all container names
+name: login-app
+
+services:
+  backend:
+    image: pseudopanda/login-app-backend:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - login-app_default
+    volumes:
+      - ./Backend/logs/server:/var/log/login-app-backend:rw
+    # As endpoints.rs doesnt give a status endpoint,
+    # https://stackoverflow.com/questions/46362935/how-to-add-a-docker-health-check-to-test-a-tcp-port-is-open
+    # a generic healthcheck is included here with curl
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+
+  db:
+    restart: always
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    networks:
+      - login-app_default
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./Backend/logs/db:/var/lib/postgresql/data/log:rw
+    command:
+      [
+        "postgres",
+        "-c", "logging_collector=on",
+        "-c", "log_destination=stderr",
+        "-c", "log_directory=log",
+        "-c", "log_statement=all",
+        "-c", "log_rotation_age=1d"
+      ]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    image: pseudopanda/login-app-frontend:latest
+    depends_on:
+      - backend
+    healthcheck:
+      # -kf to accept certificates with issues
+      test: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    networks:
+      - npm_network
+      - login-app_default
+    volumes:
+      - ./Frontend/nginx.conf:/etc/nginx/conf.d/frontend.conf:ro
+
+      # Supply a gzip configuration to enable gzip compression #
+      - ./Frontend/gzip.conf:/etc/nginx/conf.d/gzip.conf:ro
+      # Supply blacklist of IP addresses #
+      # - ./Frontend/blacklist.conf:/etc/nginx/conf.d/blacklist.conf:ro
+      - ./Frontend/logs:/var/log/nginx:rw
+networks:
+  npm_network:
+    external: true
+  login-app_default:
+
+volumes:
+  db_data:
+login-app-deploy@pseudoforceyt-hs:/mnt/more/login-app$ cat Frontend/nginx.conf
+limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+
+server {
+    listen 3000;
+    server_name localhost;
+    
+    # Security best practices
+    # https://medium.com/@mathur.danduprolu/securing-your-web-server-with-nginx-https-and-best-practices-part-5-7-99ad19bf5b1f
+    add_header X-Content-Type-Options "nosniff";
+    add_header X-Frame-Options "DENY";
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";
+    add_header Referrer-Policy "no-referrer-when-downgrade";
+
+    root /usr/share/nginx/html;
+    index index.html index.htm;
+
+    # Increase this size if backend adds support for, say profile pictures
+    client_max_body_size 1M;
+
+    # Proxy API requests to backend
+    location ~ ^/(api/.*|createUser|getUser|loginUser) {
+        limit_req zone=api_limit burst=20;
+        rewrite ^/api/(.*)$ /$1 break;
+        proxy_pass http://backend:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Serve static files directly (JS, CSS, etc.)
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|otf|map)$ {
+        expires 1y;
+        access_log off;
+        try_files $uri =404;
+    }
+
+    # Handle SPA routes
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+}
+login-app-deploy@pseudoforceyt-hs:/mnt/more/login-app$ cat Frontend/gzip.conf
+# gzip compression configuration
+gzip on;
+gzip_comp_level 6;
+gzip_disable "msie6";
+gzip_min_length 256;
+gzip_proxied any;
+gzip_types
+  application/javascript
+  application/json
+  application/xml
+  application/xml+rss
+  text/css
+  text/javascript
+  text/plain
+  text/xml;
+gzip_vary on;
+login-app-deploy@pseudoforceyt-hs:/mnt/more/login-app$ 
+```
+
+Here is a video demonstrating the workflow:
